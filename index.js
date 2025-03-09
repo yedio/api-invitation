@@ -1,37 +1,44 @@
-const url = require("url");
 const express = require("express");
 const app = express();
 const port = 8080;
+let posts = [];
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
+app.use(express.json());
+//POST 요청 시 컨텐트 타입이 application/x-www-form-urlencoded인 경우 파싱 (키=값 조합)
+app.use(express.urlencoded({ extended: true }));
+
 app.get("/", (req, res) => {
-  res.end("Hello Express");
+  res.json(posts);
 });
 
-app.get("/", (_, res) => res.end("HOME"));
-app.get("/user", user);
-app.get("/feed", feed);
+app.post("/posts", (req, res) => {
+  const { title, name, text } = req.body;
 
-function user(req, res) {
-  //호이스트를 위해 const가 아닌 function으로 변경
-  const userInfo = url.parse(req.url, true).query;
-  res.json(`[user] name : ${userInfo?.name}, age: ${userInfo?.age}`);
-}
+  posts.push({
+    id: posts.length + 1,
+    title,
+    name,
+    text,
+    createdAt: Date(),
+  });
 
-function feed(req, res) {
-  res.json(`
-      <ul>
-      <li>picture1</li>
-      <li>picture2</li>
-      <li>picture3</li>
-      </ul>
-      `);
-}
+  res.json({ title, name, text });
+});
 
-const notFound = (req, res) => {
-  res.statusCode = 404;
-  res.end("404 page not found");
-};
+app.delete("/posts/:id", (req, res) => {
+  const { id } = req.params;
+  const filteredPosts = posts.filter((post) => post.id !== +id); //+ 문자열을 숫자로 변경하는 작업
+  const isLengthChanged = posts.length !== filteredPosts.length;
+
+  posts = filteredPosts;
+  if (isLengthChanged) {
+    res.json("OK");
+    return;
+  }
+
+  res.json("NOT CHANGED");
+});
