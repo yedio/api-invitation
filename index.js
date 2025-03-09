@@ -1,44 +1,37 @@
-const http = require("http");
-const url = require("url"); //url 모듈 로딩
+const url = require("url");
+const express = require("express");
+const app = express();
+const port = 8080;
 
-const server = http.createServer((req, res) => {
-  const path = url.parse(req.url, true).pathname;
-  res.setHeader("Content-Type", "text/html");
-
-  if (path in urlMap) {
-    urlMap[path](req, res);
-  } else {
-    notFound(req, res);
-  }
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });
 
-// 서버 시작, 접속 대기
-server.listen(3000, () => console.log("OK!"));
+app.get("/", (req, res) => {
+  res.end("Hello Express");
+});
 
-const user = (req, res) => {
-  //라우터 동적 처리
-  const userInfo = url.parse(req.url, true).query; 
-  res.end(`[user] name : ${userInfo?.name}, age: ${userInfo?.age}`);
-};
+app.get("/", (_, res) => res.end("HOME"));
+app.get("/user", user);
+app.get("/feed", feed);
 
-const feed = (req, res) => {
-  res.end(`
+function user(req, res) {
+  //호이스트를 위해 const가 아닌 function으로 변경
+  const userInfo = url.parse(req.url, true).query;
+  res.json(`[user] name : ${userInfo?.name}, age: ${userInfo?.age}`);
+}
+
+function feed(req, res) {
+  res.json(`
       <ul>
       <li>picture1</li>
       <li>picture2</li>
       <li>picture3</li>
       </ul>
       `);
-};
+}
 
 const notFound = (req, res) => {
   res.statusCode = 404;
   res.end("404 page not found");
-};
-
-//라우터 규칙
-const urlMap = {
-  "/": (req, res) => res.end("HOME"),
-  "/user": user,
-  "/feed": feed,
 };
